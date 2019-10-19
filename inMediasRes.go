@@ -361,7 +361,8 @@ func main() {
 			case "<MouseRelease>":
 			case "<MouseRight>":
 			case "<MouseMiddle>":
-			case "<MouseMiddleRelease>":
+			case "<MouseWheelUp>":
+			case "<MouseWheelDown>":
 			default:
 				cmdBox.Text += e.ID
 				ui.Render(cmdBox)
