@@ -370,6 +370,12 @@ func main() {
 				processCommand(cmdBox.Text, sha256hash, honk)
 				cmdBox.Text = ": "
 				ui.Render(cmdBox)
+			case "<MouseLeft>":
+			case "<MouseRelease>":
+			case "<MouseRight>":
+			case "<MouseMiddle>":
+			case "<MouseWheelUp>":
+			case "<MouseWheelDown>":
 			default:
 				cmdBox.Text += e.ID
 				ui.Render(cmdBox)
