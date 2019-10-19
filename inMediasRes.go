@@ -20,6 +20,7 @@ import (
 	"github.com/glaslos/ssdeep"
 	"github.com/h2non/filetype"
 	"github.com/pkg/browser"
+	"github.com/weldpua2008/go-dialog"
 )
 
 func check(e error) {
@@ -68,24 +69,36 @@ func ioReader(file string) io.ReaderAt {
 
 func processCommand(cmd string, sha256h string, hnk *widgets.Paragraph) {
 
-	if cmd == ": vt" {
-		vtURL := "https://virustotal.com/gui/file/" + sha256h
-		browser.OpenURL(vtURL)
-	}
+	switch cmd {
+		case ": vt":
+			{
+				vtURL := "https://virustotal.com/gui/file/" + sha256h
+				browser.OpenURL(vtURL)
+			}
 
-	if cmd == ": ha" {
-		haURL := "https://www.hybrid-analysis.com/search?query=" + sha256h
-		browser.OpenURL(haURL)
-	}
+		case ": ha":
+			{
+				haURL := "https://www.hybrid-analysis.com/search?query=" + sha256h
+				browser.OpenURL(haURL)
+			}
 
-	if cmd == ": ms" {
-		msURL := "https://malshare.com/search.php?query=" + sha256h
-		browser.OpenURL(msURL)
-	}
+		case ": ms":
+			{
+				msURL := "https://malshare.com/search.php?query=" + sha256h
+				browser.OpenURL(msURL)
+			}
 
-	if cmd == ": honk" {
-		ui.Render(hnk)
-	}
+		case ": honk":
+			{
+				ui.Render(hnk)
+			}
+
+		default:
+			{
+				d := dialog.New(dialog.AUTO, 0)
+				d.Msgbox("Command not recognized. Type \"help\" to see available commands")
+			}
+		}
 
 }
 
