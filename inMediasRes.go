@@ -357,6 +357,7 @@ func main() {
 				processCommand(cmdBox.Text, sha256hash, honk)
 				cmdBox.Text = ": "
 				ui.Render(cmdBox)
+			// TODO: I think I can grab the mouseevents here
 			default:
 				cmdBox.Text += e.ID
 				ui.Render(cmdBox)
