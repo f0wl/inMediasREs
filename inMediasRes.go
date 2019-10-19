@@ -357,7 +357,11 @@ func main() {
 				processCommand(cmdBox.Text, sha256hash, honk)
 				cmdBox.Text = ": "
 				ui.Render(cmdBox)
-			// TODO: I think I can grab the mouseevents here
+			case "<MouseLeft>":
+			case "<MouseRelease>":
+			case "<MouseRight>":
+			case "<MouseMiddle>":
+			case "<MouseMiddleRelease>":
 			default:
 				cmdBox.Text += e.ID
 				ui.Render(cmdBox)
