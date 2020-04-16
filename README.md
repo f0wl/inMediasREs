@@ -4,4 +4,4 @@ inMediasREs (lat. "in the middle of the action") is a basic static analysis tool
 ![Screenshot](https://f0wl.cc/img/current.png)
 
 ## Dependencies
-```termui, browser, ssdeep, filetype```
+```termui, browser, ssdeep, filetype, go-dialog```
