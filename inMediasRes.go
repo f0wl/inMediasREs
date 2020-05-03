@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
+	"debug/elf"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -20,6 +21,7 @@ import (
 	"github.com/glaslos/ssdeep"
 	"github.com/h2non/filetype"
 	"github.com/pkg/browser"
+	"github.com/weldpua2008/go-dialog"
 )
 
 func check(e error) {
@@ -34,59 +36,65 @@ func ioReader(file string) io.ReaderAt {
 	return r
 }
 
-//func elfAnalysis() (imp []string, sym []elf.ImportedSymbol) {
-//
-//	f := ioReader(os.Args[1])
-//	_elf, err := elf.NewFile(f)
-//	check(err)
-//
-//	// Read and decode ELF identifier
-//	var ident [16]uint8
-//	f.ReadAt(ident[0:], 0)
-//	check(err)
-//
-//	if ident[0] != '\x7f' || ident[1] != 'E' || ident[2] != 'L' || ident[3] != 'F' {
+// PEAnalysis is the function that is responsible for PE handling
+func PEAnalysis() (imp []string, sym []elf.ImportedSymbol) {
 
-//		if ident[0] != '\x4D' || ident[1] != 'M' || ident[2] != 'Z'{
-//			PEAnalysis()
-//		}
-//
-//		else {
-//			os.Exit(1)
-//		}
-//	}
-//
-//	imp, err = _elf.ImportedLibraries()
-//	sym, err = _elf.ImportedSymbols()
-//
-//	return imp, sym
-//
-//}
+	return imp, sym
+}
 
-//func PEAnalysis() {
-//}
+// ELFAnalysis is the function that is responsible for PE handling
+func ELFAnalysis() (imp []string, sym []elf.ImportedSymbol) {
 
-func processCommand(cmd string, sha256h string, hnk *widgets.Paragraph) {
+	f := ioReader(os.Args[1])
+	_elf, err := elf.NewFile(f)
+	check(err)
 
-	if cmd == ": vt" {
-		vtURL := "https://virustotal.com/gui/file/" + sha256h
-		browser.OpenURL(vtURL)
+	// Read and decode ELF identifier
+	var ident [16]uint8
+	f.ReadAt(ident[0:], 0)
+	check(err)
+
+	if ident[0] != '\x7f' || ident[1] != 'E' || ident[2] != 'L' || ident[3] != 'F' {
+
+		if ident[0] != '\x4D' || ident[1] != 'M' || ident[2] != 'Z' {
+			PEAnalysis()
+		}
 	}
 
-	if cmd == ": ha" {
-		haURL := "https://www.hybrid-analysis.com/search?query=" + sha256h
-		browser.OpenURL(haURL)
-	}
+	imp, err = _elf.ImportedLibraries()
+	sym, err = _elf.ImportedSymbols()
 
-	if cmd == ": ms" {
-		msURL := "https://malshare.com/search.php?query=" + sha256h
-		browser.OpenURL(msURL)
-	}
+	return imp, sym
 
-	if cmd == ": honk" {
-		ui.Render(hnk)
-	}
+}
 
+func processCommand(cmd string, sha256h string) {
+
+	switch cmd {
+	case ": vt":
+		{
+			vtURL := "https://virustotal.com/gui/file/" + sha256h
+			browser.OpenURL(vtURL)
+		}
+
+	case ": ha":
+		{
+			haURL := "https://www.hybrid-analysis.com/search?query=" + sha256h
+			browser.OpenURL(haURL)
+		}
+
+	case ": ms":
+		{
+			msURL := "https://malshare.com/search.php?query=" + sha256h
+			browser.OpenURL(msURL)
+		}
+
+	default:
+		{
+			d := dialog.New(dialog.AUTO, 0)
+			d.Msgbox("Command not recognized. Type \"help\" to see available commands")
+		}
+	}
 }
 
 func hashfilemd5(filePath string) (string, error) {
@@ -173,9 +181,9 @@ func main() {
 	headerBox := widgets.NewParagraph()
 	headerBox.Title = "Filename: " + filename
 	headerBox.Text = "    ____     __  ___       ___          ___  ____\n"
-	headerBox.Text += "   /  _/__  /  |/  /__ ___/ (_)__ ____ / _ \\/ __/__             Kickstart your static analysis process             | Press q to quit\n"
-	headerBox.Text += "  _/ // _ \\/ /|_/ / -_) _  / / _ `(_-</ , _/ _/(_-<               Marius Genheimer (@f0wlsec), 2019                | Press r to create a report\n"
-	headerBox.Text += " /___/_//_/_/  /_/\\__/\\_,_/_/\\_,_/___/_/|_/___/___/                   https://dissectingmalwa.re                   | Don't forget to honk\n"
+	headerBox.Text += "   /  _/__  /  |/  /__ ___/ (_)__ ____ / _ \\/ __/__             Kickstart your static analysis process             | Press CTRL+q to quit\n"
+	headerBox.Text += "  _/ // _ \\/ /|_/ / -_) _  / / _ `(_-</ , _/ _/(_-<             Marius Genheimer (@f0wlsec), 2019-2020             | Press CTRL+r for a report\n"
+	headerBox.Text += " /___/_//_/_/  /_/\\__/\\_,_/_/\\_,_/___/_/|_/___/___/                   https://dissectingmalwa.re\n"
 
 	headerBox.SetRect(0, 0, 150, 7)
 	headerBox.TextStyle.Fg = ui.ColorCyan
@@ -278,10 +286,6 @@ func main() {
 	fileHeaderBox.TextStyle.Fg = ui.ColorWhite
 	fileHeaderBox.BorderStyle.Fg = ui.ColorCyan
 
-	//var impList []string
-	//var symList []elf.ImportedSymbol
-	//impList, symList = elfAnalysis()
-
 	importsBox := widgets.NewList()
 	importsBox.SetRect(50, 36, 100, 47)
 	importsBox.Title = "Imports"
@@ -303,32 +307,6 @@ func main() {
 	cmdBox.TextStyle.Fg = ui.ColorWhite
 	cmdBox.BorderStyle.Fg = ui.ColorCyan
 
-	honk := widgets.NewParagraph()
-	honk.SetRect(0, 0, 150, 50)
-	honk.Title = "InMediasREs - Honk!"
-	honk.Text = "Press ESC to quit\n\n\n\n\n\n\n\n\n\n\n\n\n                                                                                          _...--.\n"
-	honk.Text += "                                                                         _____......----'     .'\n"
-	honk.Text += "                                                                   _..-''                   .'\n"
-	honk.Text += "                                                                 .'                       ./\n"
-	honk.Text += "                                                          _.--._.'                       .' |\n"
-	honk.Text += "                                                       .-'                           .-.'  /\n"
-	honk.Text += "                                                     .'   _.-.                     .  \\   '    \n"
-	honk.Text += "                                                   .'  .'   .'    _    .-.        / `./  :    _  _  ___  _  _ _  __\n"
-	honk.Text += "                                                 .'  .'   .'    _    .-.        / `./  :     | || |/ _ \\| \\| | |/ /\n"
-	honk.Text += "                                               .'  .'   .'    _    .-.        / `./  :       | __ | (_) | .` | ' < \n"
-	honk.Text += "                                             .'  .'   .'  .--' `.  |  \\  |`. |     .'        |_||_|\\___/|_|\\_|_|\\_\\ \n"
-	honk.Text += "                                          _.'  .'   .' `.'       `-'   \\ / |.'   .'\n"
-	honk.Text += "                                       _.'  .-'   .'     `-.            `      .'\n"
-	honk.Text += "                                     .'   .'    .'          `-.._ _ _ _ .-.    :\n"
-	honk.Text += "                                    /    /o _.-'               .--'   .'   \\   |\n"
-	honk.Text += "                                  .'-.__..-'                  /..    .`    / .'\n"
-	honk.Text += "                                .'   . '                       /.'/.'     /  |\n"
-	honk.Text += "                               `---'                                   _.'   '\n"
-	honk.Text += "                                                                     /.'    .'\n"
-	honk.Text += "                                                                      /.'/.'\n"
-	honk.TextStyle.Fg = ui.ColorCyan
-	honk.BorderStyle.Fg = ui.ColorCyan
-
 	//Render Boxes
 	ui.Render(headerBox, hashBox, fileInfoBox, sectionBox, stringsBox, urlBox, entropyBox, sandBox, yaraBox, fileHeaderBox, importsBox, symbolsBox, extrasBox, cmdBox)
 
@@ -340,6 +318,12 @@ func main() {
 		select {
 		case e := <-uiEvents:
 			switch e.ID {
+			case "<MouseLeft>":
+			case "<MouseRelease>":
+			case "<MouseRight>":
+			case "<MouseMiddle>":
+			case "<MouseWheelUp>":
+			case "<MouseWheelDown>":
 			case "<C-q>":
 				return
 			case "<Escape>":
@@ -354,12 +338,14 @@ func main() {
 				}
 				ui.Render(cmdBox)
 			case "<Enter>":
-				processCommand(cmdBox.Text, sha256hash, honk)
+				processCommand(cmdBox.Text, sha256hash)
 				cmdBox.Text = ": "
 				ui.Render(cmdBox)
 			default:
-				cmdBox.Text += e.ID
-				ui.Render(cmdBox)
+				if (e.ID != "<MouseLeft>") && (e.ID != "<MouseRight>") && (e.ID != "<MouseMiddle>") && (e.ID != "<MouseRelease>") {
+					cmdBox.Text += e.ID
+					ui.Render(cmdBox)
+				}
 			}
 		case <-ticker:
 			tickerCount++
