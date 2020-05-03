@@ -1,21 +1,16 @@
-// Marius Genheimer 2019, https://dissectingmalwa.re
+// Marius Genheimer 2019-2020, https://dissectingmalwa.re
 
 package main
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"crypto/sha256"
-	"debug/elf"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
+	utilimr "./utilities"
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/glaslos/ssdeep"
@@ -23,50 +18,6 @@ import (
 	"github.com/pkg/browser"
 	"github.com/weldpua2008/go-dialog"
 )
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func ioReader(file string) io.ReaderAt {
-	r, err := os.Open(file)
-	check(err)
-	return r
-}
-
-// PEAnalysis is the function that is responsible for PE handling
-func PEAnalysis() (imp []string, sym []elf.ImportedSymbol) {
-
-	return imp, sym
-}
-
-// ELFAnalysis is the function that is responsible for PE handling
-func ELFAnalysis() (imp []string, sym []elf.ImportedSymbol) {
-
-	f := ioReader(os.Args[1])
-	_elf, err := elf.NewFile(f)
-	check(err)
-
-	// Read and decode ELF identifier
-	var ident [16]uint8
-	f.ReadAt(ident[0:], 0)
-	check(err)
-
-	if ident[0] != '\x7f' || ident[1] != 'E' || ident[2] != 'L' || ident[3] != 'F' {
-
-		if ident[0] != '\x4D' || ident[1] != 'M' || ident[2] != 'Z' {
-			PEAnalysis()
-		}
-	}
-
-	imp, err = _elf.ImportedLibraries()
-	sym, err = _elf.ImportedSymbols()
-
-	return imp, sym
-
-}
 
 func processCommand(cmd string, sha256h string) {
 
@@ -97,78 +48,6 @@ func processCommand(cmd string, sha256h string) {
 	}
 }
 
-func hashfilemd5(filePath string) (string, error) {
-	var returnMD5String string
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return returnMD5String, err
-	}
-
-	defer file.Close()
-
-	hash := md5.New()
-
-	if _, err := io.Copy(hash, file); err != nil {
-		return returnMD5String, err
-	}
-
-	hashInBytes := hash.Sum(nil)[:16]
-
-	returnMD5String = hex.EncodeToString(hashInBytes)
-
-	return returnMD5String, nil
-
-}
-
-func hashfilesha1(filePath string) (string, error) {
-	var returnSHA1String string
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return returnSHA1String, err
-	}
-
-	defer file.Close()
-
-	hash := sha1.New()
-
-	if _, err := io.Copy(hash, file); err != nil {
-		return returnSHA1String, err
-	}
-
-	hashInBytes := hash.Sum(nil)[:20]
-
-	returnSHA1String = hex.EncodeToString(hashInBytes)
-
-	return returnSHA1String, nil
-
-}
-
-func hashfilesha256(filePath string) (string, error) {
-	var returnSHA256String string
-
-	file, err := os.Open(filePath)
-	if err != nil {
-		return returnSHA256String, err
-	}
-
-	defer file.Close()
-
-	hash := sha256.New()
-
-	if _, err := io.Copy(hash, file); err != nil {
-		return returnSHA256String, err
-	}
-
-	hashInBytes := hash.Sum(nil)[:32]
-
-	returnSHA256String = hex.EncodeToString(hashInBytes)
-
-	return returnSHA256String, nil
-
-}
-
 func main() {
 	if err := ui.Init(); err != nil {
 		log.Fatalf("failed to initialize termui: %v", err)
@@ -196,9 +75,9 @@ func main() {
 	hashBox.BorderStyle.Fg = ui.ColorCyan
 
 	// generate file hashes
-	md5hash, err := hashfilemd5(filename)
-	sha1hash, err := hashfilesha1(filename)
-	sha256hash, err := hashfilesha256(filename)
+	md5hash, err := utilimr.Hashfilemd5(filename)
+	sha1hash, err := utilimr.Hashfilesha1(filename)
+	sha256hash, err := utilimr.Hashfilesha256(filename)
 	ssdeephash, err := ssdeep.FuzzyFilename(filename)
 
 	if err == nil {
